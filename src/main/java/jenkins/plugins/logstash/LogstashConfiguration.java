@@ -9,6 +9,8 @@ import java.util.logging.Logger;
 
 import javax.annotation.CheckForNull;
 
+import org.kohsuke.accmod.Restricted;
+import org.kohsuke.accmod.restrictions.NoExternalUse;
 import org.kohsuke.stapler.StaplerRequest;
 
 import com.cloudbees.syslog.MessageFormat;
@@ -132,6 +134,14 @@ public class LogstashConfiguration extends GlobalConfiguration
     return null;
   }
 
+
+  // for testing only
+  @Restricted(NoExternalUse.class)
+  void setActiveIndexer(LogstashIndexer<?> activeIndexer)
+  {
+    this.activeIndexer = activeIndexer;
+  }
+
   public List<?> getIndexerTypes()
   {
     return LogstashIndexer.all();
@@ -235,6 +245,17 @@ public class LogstashConfiguration extends GlobalConfiguration
   @Override
   public boolean configure(StaplerRequest staplerRequest, JSONObject json) throws FormException
   {
+
+    // When not enabling the plugin we just save the enabled state
+    // without binding the JSON and then return. This avoids problems with missing configuration
+    // like URLs which can't be parsed when empty, which would lead to errors in the UI.
+    Boolean e = json.getBoolean("enabled");
+    if (!e)
+    {
+      enabled = false;
+      save();
+      return true;
+    }
 
     // when we bind the stapler request we get a new instance of logstashIndexer.
     // logstashIndexer is holder for the dao instance.
