@@ -43,7 +43,6 @@ public interface LogstashIndexerDao {
     RABBIT_MQ,
     ELASTICSEARCH,
     SYSLOG,
-    LOGZIO
   }
 
   @Deprecated

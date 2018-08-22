@@ -222,13 +222,6 @@ public class LogstashConfiguration extends GlobalConfiguration
             logstashIndexer = syslog;
             enabled = true;
             break;
-          case LOGZIO:
-            LOGGER.log(Level.INFO, "Migrating logstash configuration for Logz.io");
-            Logzio logz = new Logzio();
-            logz.setHost(descriptor.getHost());
-            logz.setKey(descriptor.getKey());
-            logstashIndexer = logz;
-            break;
           default:
             LOGGER.log(Level.INFO, "unknown logstash Indexer type: " + type);
             enabled = false;

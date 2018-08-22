@@ -1,23 +1,26 @@
 package jenkins.plugins.logstash.persistence;
 
 import com.github.wnameless.json.flattener.JsonFlattener;
-import com.google.common.io.Files;
-
-import io.logz.sender.LogzioSender;
+import io.logz.sender.FormattedLogMessage;
+import io.logz.sender.HttpsRequestConfiguration;
+import io.logz.sender.HttpsSyncSender;
 import io.logz.sender.SenderStatusReporter;
 import io.logz.sender.com.google.gson.JsonObject;
 import io.logz.sender.exceptions.LogzioParameterErrorException;
-
-import java.io.*;
-import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import jenkins.model.Jenkins;
-import jenkins.plugins.logstash.LogstashConfiguration;
+import io.logz.sender.exceptions.LogzioServerErrorException;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+
+import java.io.IOException;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
  * Logz.io Data Access Object.
@@ -26,17 +29,10 @@ import net.sf.json.JSONObject;
  */
 
 public class LogzioDao extends AbstractLogstashIndexerDao {
-    private static final int CONNECT_TIMEOUT = 10*1000;
-    private static final int CORE_POOL_SIZE = 2;
-    private static final int DRAIN_TIMEOUT = 2;
-    private static final int FS_PERCENT_THRESHOLD = 99;
-    private static final int GC_PERSISTED_QUEUE_FILE_INTERVAL_SECOND = 30;
-    private static final int SOCKET_TIMEOUT = 10*1000;
-    private static final String TYPE = "jenkins_plugin";
-    private final LogzioSender logzioSender;
-
+    private final String TYPE = "jenkins_logstash_plugin";
     private String key;
     private String host;
+    private LogzioHttpsClient httpsClient;
 
     //primary constructor used by indexer factory
     public LogzioDao(String host, String key){
@@ -44,51 +40,44 @@ public class LogzioDao extends AbstractLogstashIndexerDao {
     }
 
     // Factored for unit testing
-    LogzioDao(LogzioSender factory, String host, String key){
+    LogzioDao(LogzioHttpsClient factory, String host, String key) {
         this.host = host;
         this.key = key;
-
-        // create file for sender queue
-        File fp;
-        Jenkins jenkins = Jenkins.getInstanceOrNull();
-        if (jenkins == null){
-            // for testing (mvn package)
-            fp = Files.createTempDir();
-        }else{
-            fp = new File(jenkins.getRootDir() + "/logs/logzio_plugin");
-            boolean folderExisted = fp.mkdirs() || fp.setWritable(true);
-            if (!folderExisted) {
-                throw new IllegalArgumentException("Unable to create path");
-            }
-        }
-
         try{
-            this.logzioSender = factory == null ? LogzioSender.getOrCreateSenderByType(key, TYPE, DRAIN_TIMEOUT,
-                    FS_PERCENT_THRESHOLD, fp, host, SOCKET_TIMEOUT, CONNECT_TIMEOUT,false, null,
-                    Executors.newScheduledThreadPool(CORE_POOL_SIZE),GC_PERSISTED_QUEUE_FILE_INTERVAL_SECOND, true) : factory;
-            this.logzioSender.start();
-        }catch (LogzioParameterErrorException e){
-            throw new IllegalArgumentException(e.getMessage());
+            this.httpsClient = factory == null ? new LogzioHttpsClient(key, host, TYPE) : factory;
+        }catch (LogzioParameterErrorException e) {
+            throw new IllegalArgumentException(e);
         }
     }
 
     @Override
-    public void push(String data) {
+    public void push(String data) throws IOException {
         JSONObject jsonData = JSONObject.fromObject(data);
         JSONArray logMessages = jsonData.getJSONArray("message");
-        for (Object logMsg : logMessages) {
-            JsonObject logLine = createLogLine(jsonData, logMsg.toString());
-            this.logzioSender.send(logLine);
+        if (!logMessages.isEmpty()) {
+            try{
+                for (Object logMsg : logMessages) {
+                    JsonObject logLine = createLogLine(jsonData, logMsg.toString());
+                    httpsClient.send(new FormattedLogMessage((logLine + "\n").getBytes()));
+                }
+                httpsClient.flush();
+            }catch (LogzioServerErrorException e){
+                throw new IOException(e);
+            }
+
         }
     }
 
-    protected JsonObject createLogLine(JSONObject jsonData, String logMsg) {
+
+    private JsonObject createLogLine(JSONObject jsonData, String logMsg) {
         JsonObject logLine = new JsonObject();
         logLine.addProperty("message", logMsg);
-        logLine.addProperty("@timestamp", LogstashConfiguration.getInstance().getDateFormatter().format(Calendar.getInstance().getTime()));
-        jsonData.keySet().stream()
-        .filter(key -> !(key.equals("message")))
-        .forEach(key -> logLine.addProperty(key.toString(), jsonData.getString(key.toString())));
+        logLine.addProperty("@timestamp", ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT)); //Todo - check in kibana
+        jsonData
+                .keySet()
+                .stream()
+                .filter(key -> !(key.equals("message")))
+                .forEach(key -> logLine.addProperty(key.toString(), jsonData.getString(key.toString())));
         return logLine;
     }
 
@@ -120,5 +109,91 @@ public class LogzioDao extends AbstractLogstashIndexerDao {
 
     public String getType(){ return TYPE; }
 
-}
+    public class LogzioHttpsClient{
+        private final int MAX_SIZE_IN_BYTES = 8 * 1024 * 1024;  // 8 MB
 
+        private final int CONNECT_TIMEOUT = 10*1000;
+        private final int SOCKET_TIMEOUT = 10*1000;
+        private final HttpsSyncSender logzioClient;
+        private List<FormattedLogMessage> messages;
+        private int size;
+
+        LogzioHttpsClient(String token, String listener, String type) throws LogzioParameterErrorException {
+            HttpsRequestConfiguration gzipHttpsRequestConfiguration = HttpsRequestConfiguration
+                    .builder()
+                    .setLogzioToken(key)
+                    .setLogzioType(type)
+                    .setLogzioListenerUrl(host)
+                    .setSocketTimeout(SOCKET_TIMEOUT)
+                    .setConnectTimeout(CONNECT_TIMEOUT)
+                    .setCompressRequests(true)
+                    .build();
+
+            logzioClient = new HttpsSyncSender(gzipHttpsRequestConfiguration, new StatusReporter());
+            this.messages = new ArrayList<>();
+            size = 0;
+        }
+
+        public void send(FormattedLogMessage log) throws LogzioServerErrorException {
+            messages.add(log);
+            size += log.getSize();
+            if (size > MAX_SIZE_IN_BYTES) {
+                sendAndReset();
+            }
+        }
+
+        private void reset(){
+            size = 0;
+            messages.clear();
+        }
+
+        void flush() throws LogzioServerErrorException {
+            if(messages.size() > 0 ) {
+                sendAndReset();
+            }
+        }
+
+        private void sendAndReset() throws LogzioServerErrorException {
+            logzioClient.sendToLogzio(messages);
+            reset();
+        }
+    }
+
+    public class StatusReporter implements SenderStatusReporter {
+        @Override
+        public void error(String msg) {
+            Logger.getLogger("hudson.security.csrf.CrumbFilter").setLevel(Level.SEVERE);
+            Logger.getLogger("hudson.security.csrf.CrumbFilter").log(Level.SEVERE,msg);
+        }
+
+        @Override
+        public void error(String msg, Throwable e) {
+            Logger.getLogger("hudson.security.csrf.CrumbFilter").setLevel(Level.SEVERE);
+            Logger.getLogger("hudson.security.csrf.CrumbFilter").log(Level.SEVERE,msg);
+        }
+
+        @Override
+        public void warning(String msg) {
+            Logger.getLogger("hudson.security.csrf.CrumbFilter").setLevel(Level.SEVERE);
+            Logger.getLogger("hudson.security.csrf.CrumbFilter").log(Level.SEVERE,msg);
+        }
+
+        @Override
+        public void warning(String msg, Throwable e) {
+            Logger.getLogger("hudson.security.csrf.CrumbFilter").setLevel(Level.SEVERE);
+            Logger.getLogger("hudson.security.csrf.CrumbFilter").log(Level.SEVERE,msg);
+        }
+
+        @Override
+        public void info(String msg) {
+            Logger.getLogger("hudson.security.csrf.CrumbFilter").setLevel(Level.SEVERE);
+            Logger.getLogger("hudson.security.csrf.CrumbFilter").log(Level.SEVERE,msg);
+        }
+
+        @Override
+        public void info(String msg, Throwable e) {
+            Logger.getLogger("hudson.security.csrf.CrumbFilter").setLevel(Level.SEVERE);
+            Logger.getLogger("hudson.security.csrf.CrumbFilter").log(Level.SEVERE,msg);
+        }
+    }
+}
