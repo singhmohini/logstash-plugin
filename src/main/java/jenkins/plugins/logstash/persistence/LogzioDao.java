@@ -12,6 +12,7 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -58,7 +59,7 @@ public class LogzioDao extends AbstractLogstashIndexerDao {
             try{
                 for (Object logMsg : logMessages) {
                     JsonObject logLine = createLogLine(jsonData, logMsg.toString());
-                    httpsClient.send(new FormattedLogMessage((logLine + "\n").getBytes()));
+                    httpsClient.send(new FormattedLogMessage((logLine + "\n").getBytes(Charset.forName("UTF-8"))));
                 }
                 httpsClient.flush();
             }catch (LogzioServerErrorException e){
