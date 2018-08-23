@@ -22,9 +22,6 @@ public class Logzio extends LogstashIndexer<LogzioDao>
     @DataBoundConstructor
     public Logzio(){}
 
-    /*
-     * We use URL for the setter as stapler can autoconvert a string to a URL but not to a URI
-     */
     public String getHost(){ return this.host; }
 
     @DataBoundSetter

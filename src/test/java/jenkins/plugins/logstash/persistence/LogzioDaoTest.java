@@ -1,9 +1,7 @@
 package jenkins.plugins.logstash.persistence;
 
-import com.google.common.io.Files;
 import io.logz.sender.FormattedLogMessage;
 import io.logz.sender.exceptions.LogzioServerErrorException;
-import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
 import net.sf.json.test.JSONAssert;
 import org.junit.Before;
@@ -12,10 +10,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PowerMockIgnore;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,12 +18,14 @@ import java.util.Arrays;
 import java.util.Collections;
 
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.when;
 
-@RunWith(PowerMockRunner.class)
-@PowerMockIgnore({"javax.crypto.*", "javax.management.*"})
-@PrepareForTest(Jenkins.class)
+@RunWith(MockitoJUnitRunner.class)
 public class LogzioDaoTest {
 
     private static final String data = "{\"a\":{\"b\":1,\"c\":2,\"d\":[false, true]},\"e\":\"f\",\"g\":2.3}";
@@ -45,7 +42,6 @@ public class LogzioDaoTest {
 
     @Mock private LogzioDao.LogzioHttpsClient logzioSender;
     @Mock private BuildData mockBuildData;
-    @Mock private Jenkins jenkins;
 
     private LogzioDao createDao(String host, String key) throws IllegalArgumentException {
         return new LogzioDao(logzioSender, host, key);
@@ -57,10 +53,6 @@ public class LogzioDaoTest {
 
         doNothing().when(logzioSender).send(any(FormattedLogMessage.class));
         doNothing().when(logzioSender).flush();
-
-        PowerMockito.mockStatic(Jenkins.class);
-        PowerMockito.when(Jenkins.getInstance()).thenReturn(jenkins);
-        PowerMockito.when(jenkins.getRootDir()).thenReturn(Files.createTempDir());
 
         dao = createDao("http://localhost:8200/", "123456789");
 
@@ -80,7 +72,7 @@ public class LogzioDaoTest {
     public void buildPayloadSuccessEmpty(){
         when(mockBuildData.toString()).thenReturn("{}");
         // Unit under test
-        JSONObject result = dao.buildPayload(mockBuildData, "http://localhost:8080/jenkins", new ArrayList<>());
+        JSONObject result = dao.buildPayload(mockBuildData, "http://localhost:8080/jenkins", new ArrayList<String>());
         result.remove("@timestamp");
 
         // Verify results
@@ -113,7 +105,7 @@ public class LogzioDaoTest {
     public void buildPayloadWithDataSuccessEmpty(){
         when(mockBuildData.toString()).thenReturn(data);
         // Unit under test
-        JSONObject result = dao.buildPayload(mockBuildData, "http://localhost:8080/jenkins", new ArrayList<>());
+        JSONObject result = dao.buildPayload(mockBuildData, "http://localhost:8080/jenkins", new ArrayList<String>());
         result.remove("@timestamp");
 
         // Verify results

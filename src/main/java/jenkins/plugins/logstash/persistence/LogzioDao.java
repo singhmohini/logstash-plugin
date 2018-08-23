@@ -1,11 +1,11 @@
 package jenkins.plugins.logstash.persistence;
 
 import com.github.wnameless.json.flattener.JsonFlattener;
+import com.google.gson.JsonObject;
 import io.logz.sender.FormattedLogMessage;
 import io.logz.sender.HttpsRequestConfiguration;
 import io.logz.sender.HttpsSyncSender;
 import io.logz.sender.SenderStatusReporter;
-import io.logz.sender.com.google.gson.JsonObject;
 import io.logz.sender.exceptions.LogzioParameterErrorException;
 import io.logz.sender.exceptions.LogzioServerErrorException;
 import net.sf.json.JSONArray;
@@ -20,12 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Logz.io Data Access Object.
  *
  * @author Ido Halevi
+ * @email ido.h@logz.io
  */
 
 public class LogzioDao extends AbstractLogstashIndexerDao {
@@ -64,20 +64,22 @@ public class LogzioDao extends AbstractLogstashIndexerDao {
             }catch (LogzioServerErrorException e){
                 throw new IOException(e);
             }
-
         }
     }
 
 
     private JsonObject createLogLine(JSONObject jsonData, String logMsg) {
         JsonObject logLine = new JsonObject();
+
         logLine.addProperty("message", logMsg);
-        logLine.addProperty("@timestamp", ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_INSTANT)); //Todo - check in kibana
-        jsonData
-                .keySet()
-                .stream()
-                .filter(key -> !(key.equals("message")))
-                .forEach(key -> logLine.addProperty(key.toString(), jsonData.getString(key.toString())));
+        logLine.addProperty("@timestamp", ZonedDateTime.now(ZoneOffset.UTC).format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+
+        for (Object key : jsonData.keySet()) {
+            if (!key.equals("message")){
+                logLine.addProperty(key.toString(), jsonData.getString(key.toString()));
+            }
+        }
+
         return logLine;
     }
 
@@ -112,25 +114,26 @@ public class LogzioDao extends AbstractLogstashIndexerDao {
     public class LogzioHttpsClient{
         private final int MAX_SIZE_IN_BYTES = 8 * 1024 * 1024;  // 8 MB
 
-        private final int CONNECT_TIMEOUT = 10*1000;
-        private final int SOCKET_TIMEOUT = 10*1000;
+        private final int CONNECT_TIMEOUT = 10 * 1000;
+        private final int SOCKET_TIMEOUT = 10 * 1000;
         private final HttpsSyncSender logzioClient;
         private List<FormattedLogMessage> messages;
         private int size;
+        private final SenderStatusReporter reporter;
 
         LogzioHttpsClient(String token, String listener, String type) throws LogzioParameterErrorException {
             HttpsRequestConfiguration gzipHttpsRequestConfiguration = HttpsRequestConfiguration
                     .builder()
-                    .setLogzioToken(key)
+                    .setLogzioToken(token)
                     .setLogzioType(type)
-                    .setLogzioListenerUrl(host)
+                    .setLogzioListenerUrl(listener)
                     .setSocketTimeout(SOCKET_TIMEOUT)
                     .setConnectTimeout(CONNECT_TIMEOUT)
                     .setCompressRequests(true)
                     .build();
-
-            logzioClient = new HttpsSyncSender(gzipHttpsRequestConfiguration, new StatusReporter());
-            this.messages = new ArrayList<>();
+            reporter = new Reporter();
+            logzioClient = new HttpsSyncSender(gzipHttpsRequestConfiguration, reporter);
+            messages = new ArrayList<>();
             size = 0;
         }
 
@@ -157,43 +160,43 @@ public class LogzioDao extends AbstractLogstashIndexerDao {
             logzioClient.sendToLogzio(messages);
             reset();
         }
-    }
 
-    public class StatusReporter implements SenderStatusReporter {
-        @Override
-        public void error(String msg) {
-            Logger.getLogger("hudson.security.csrf.CrumbFilter").setLevel(Level.SEVERE);
-            Logger.getLogger("hudson.security.csrf.CrumbFilter").log(Level.SEVERE,msg);
-        }
+        private class Reporter implements SenderStatusReporter{
+            private final Logger LOGGER = Logger.getLogger(LogzioDao.class.getName());
 
-        @Override
-        public void error(String msg, Throwable e) {
-            Logger.getLogger("hudson.security.csrf.CrumbFilter").setLevel(Level.SEVERE);
-            Logger.getLogger("hudson.security.csrf.CrumbFilter").log(Level.SEVERE,msg);
-        }
+            private void pringLogMessage(Level level, String msg) {
+                LOGGER.log(level, msg);
+            }
 
-        @Override
-        public void warning(String msg) {
-            Logger.getLogger("hudson.security.csrf.CrumbFilter").setLevel(Level.SEVERE);
-            Logger.getLogger("hudson.security.csrf.CrumbFilter").log(Level.SEVERE,msg);
-        }
+            @Override
+            public void error(String msg) {
+                pringLogMessage(Level.SEVERE, "[LogzioSender]ERROR: " + msg);
+            }
 
-        @Override
-        public void warning(String msg, Throwable e) {
-            Logger.getLogger("hudson.security.csrf.CrumbFilter").setLevel(Level.SEVERE);
-            Logger.getLogger("hudson.security.csrf.CrumbFilter").log(Level.SEVERE,msg);
-        }
+            @Override
+            public void error(String msg, Throwable e) {
+                pringLogMessage(Level.SEVERE, "[LogzioSender]ERROR: " + msg + "\n" +e);
+            }
 
-        @Override
-        public void info(String msg) {
-            Logger.getLogger("hudson.security.csrf.CrumbFilter").setLevel(Level.SEVERE);
-            Logger.getLogger("hudson.security.csrf.CrumbFilter").log(Level.SEVERE,msg);
-        }
+            @Override
+            public void warning(String msg) {
+                pringLogMessage(Level.WARNING, "[LogzioSender]WARNING: " + msg);
+            }
 
-        @Override
-        public void info(String msg, Throwable e) {
-            Logger.getLogger("hudson.security.csrf.CrumbFilter").setLevel(Level.SEVERE);
-            Logger.getLogger("hudson.security.csrf.CrumbFilter").log(Level.SEVERE,msg);
+            @Override
+            public void warning(String msg, Throwable e) {
+                pringLogMessage(Level.WARNING, "[LogzioSender]WARNING: " + msg + "\n" + e);
+            }
+
+            @Override
+            public void info(String msg) {
+                pringLogMessage(Level.INFO, "[LogzioSender]INFO: " + msg);
+            }
+
+            @Override
+            public void info(String msg, Throwable e) {
+                pringLogMessage(Level.INFO, "[LogzioSender]INFO: " + msg + "\n" + e);
+            }
         }
     }
 }
