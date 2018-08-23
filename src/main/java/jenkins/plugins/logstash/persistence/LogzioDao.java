@@ -111,11 +111,10 @@ public class LogzioDao extends AbstractLogstashIndexerDao {
 
     public String getType(){ return TYPE; }
 
-    public class LogzioHttpsClient{
-        private final int MAX_SIZE_IN_BYTES = 8 * 1024 * 1024;  // 8 MB
-
-        private final int CONNECT_TIMEOUT = 10 * 1000;
-        private final int SOCKET_TIMEOUT = 10 * 1000;
+    public static class LogzioHttpsClient{
+        private static final int MAX_SIZE_IN_BYTES = 8 * 1024 * 1024;  // 8 MB
+        private static final int CONNECT_TIMEOUT = 10 * 1000;
+        private static final int SOCKET_TIMEOUT = 10 * 1000;
         private final HttpsSyncSender logzioClient;
         private List<FormattedLogMessage> messages;
         private int size;
