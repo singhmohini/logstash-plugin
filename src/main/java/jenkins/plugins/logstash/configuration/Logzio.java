@@ -22,9 +22,6 @@ public class Logzio extends LogstashIndexer<LogzioDao>
     @DataBoundConstructor
     public Logzio(){}
 
-    /*
-     * We use URL for the setter as stapler can autoconvert a string to a URL but not to a URI
-     */
     public String getHost(){ return this.host; }
 
     @DataBoundSetter
@@ -79,9 +76,6 @@ public class Logzio extends LogstashIndexer<LogzioDao>
     @Extension
     public static class LogzioDescriptor extends LogstashIndexerDescriptor
     {
-        private static String EU_HOST = "https://listener-eu.logz.io:8071";
-        private static String NONEU_HOST = "https://listener.logz.io:8071";
-
         @Nonnull
         @Override
         public String getDisplayName()
@@ -109,10 +103,6 @@ public class Logzio extends LogstashIndexer<LogzioDao>
             if (StringUtils.isBlank(value))
             {
                 return FormValidation.error(Messages.ValueIsRequired());
-            }
-            else if (!(value.equals(EU_HOST) || value.equals(NONEU_HOST))){
-                return FormValidation.error("Please verify your logz.io host is one of the two possible hosts - "
-                + EU_HOST + " or " + NONEU_HOST);
             }
             return FormValidation.ok();
         }

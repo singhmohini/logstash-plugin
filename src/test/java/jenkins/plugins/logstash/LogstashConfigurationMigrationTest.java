@@ -151,19 +151,4 @@ public class LogstashConfigurationMigrationTest extends LogstashConfigurationTes
     assertThat(es.getPassword(), equalTo("pwd"));
     assertThat(es.getUsername(), equalTo("user"));
   }
-
-  @Test
-  public void logzioMigration()
-  {
-    when(descriptor.getType()).thenReturn(IndexerType.LOGZIO);
-    when(descriptor.getHost()).thenReturn("https://listener.logz.io:8071");
-    when(descriptor.getKey()).thenReturn("key");
-    configuration.migrateData();
-    LogstashIndexer<?> indexer = configuration.getLogstashIndexer();
-    assertThat(indexer, IsInstanceOf.instanceOf(Logzio.class));
-    assertThat(configuration.isMilliSecondTimestamps(),equalTo(false));
-    Logzio logz = (Logzio) indexer;
-    assertThat(logz.getKey(), equalTo("key"));
-    assertThat(logz.getHost(), equalTo("https://listener.logz.io:8071"));
-  }
 }
