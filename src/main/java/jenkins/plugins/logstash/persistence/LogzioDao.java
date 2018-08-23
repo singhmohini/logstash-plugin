@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  * Logz.io Data Access Object.
  *
  * @author Ido Halevi
- * @email ido.h@logz.io
+ *
  */
 
 public class LogzioDao extends AbstractLogstashIndexerDao {
