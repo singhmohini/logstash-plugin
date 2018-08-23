@@ -162,7 +162,7 @@ public class LogzioDao extends AbstractLogstashIndexerDao {
         }
 
         private static class Reporter implements SenderStatusReporter{
-            private final Logger LOGGER = Logger.getLogger(LogzioDao.class.getName());
+            private static final Logger LOGGER = Logger.getLogger(LogzioDao.class.getName());
 
             private void pringLogMessage(Level level, String msg) {
                 LOGGER.log(level, msg);
