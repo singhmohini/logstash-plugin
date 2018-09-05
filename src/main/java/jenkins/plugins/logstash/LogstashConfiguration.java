@@ -27,7 +27,6 @@ import jenkins.plugins.logstash.configuration.LogstashIndexer;
 import jenkins.plugins.logstash.configuration.RabbitMq;
 import jenkins.plugins.logstash.configuration.Redis;
 import jenkins.plugins.logstash.configuration.Syslog;
-import jenkins.plugins.logstash.configuration.Logzio;
 import jenkins.plugins.logstash.persistence.LogstashIndexerDao;
 import jenkins.plugins.logstash.persistence.LogstashIndexerDao.IndexerType;
 import net.sf.json.JSONObject;
