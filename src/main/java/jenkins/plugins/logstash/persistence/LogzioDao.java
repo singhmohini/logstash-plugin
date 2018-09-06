@@ -118,7 +118,7 @@ public class LogzioDao extends AbstractLogstashIndexerDao {
         private static final int CONNECT_TIMEOUT = 10 * 1000;
         private static final int SOCKET_TIMEOUT = 10 * 1000;
         private final HttpsSyncSender logzioClient;
-        private List<FormattedLogMessage> messages;
+        private List<FormattedLogMessage> messages; //Not thread safe
         private int size;
         private final SenderStatusReporter reporter;
 
