@@ -139,11 +139,11 @@ public class LogzioDao extends AbstractLogstashIndexerDao {
         }
 
         public void send(FormattedLogMessage log) throws LogzioServerErrorException {
-            messages.add(log);
-            size += log.getSize();
-            if (size > MAX_SIZE_IN_BYTES) {
+            if (size + log.getSize() > MAX_SIZE_IN_BYTES) {
                 sendAndReset();
             }
+            messages.add(log);
+            size += log.getSize();
         }
 
         private void reset(){
