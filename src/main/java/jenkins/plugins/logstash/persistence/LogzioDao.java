@@ -86,7 +86,7 @@ public class LogzioDao extends AbstractLogstashIndexerDao {
         payload.put("source_host", jenkinsUrl);
         payload.put("@buildTimestamp", buildData.getTimestamp());
         payload.put("@version", 1);
-        // Flatten build data - this is for the user to be able to use this fields for visualization in Kibana.
+        // Flatten build data - so the user will be able to use fields for visualization in Kibana.
         // In addition, it makes the query much easier.
         Map<String, Object> flattenJson = JsonFlattener.flattenAsMap(buildData.toString());
         for (Map.Entry<String, Object> entry : flattenJson.entrySet()) {

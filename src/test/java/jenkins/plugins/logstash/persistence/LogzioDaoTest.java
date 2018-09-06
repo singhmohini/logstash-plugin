@@ -40,7 +40,7 @@ public class LogzioDaoTest {
 
     @Captor private ArgumentCaptor<FormattedLogMessage> sendArgument = ArgumentCaptor.forClass(FormattedLogMessage.class);
 
-    @Mock private LogzioDao.LogzioHttpsClient logzioSender;
+    @Mock private LogzioHttpsClient logzioSender;
     @Mock private BuildData mockBuildData;
 
     private LogzioDao createDao(String host, String key) throws IllegalArgumentException {

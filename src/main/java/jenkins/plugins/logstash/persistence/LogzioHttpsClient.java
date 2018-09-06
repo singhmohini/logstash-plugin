@@ -50,7 +50,7 @@ public class LogzioHttpsClient{
     }
 
     void flush() throws LogzioServerErrorException {
-        if(messages.size() > 0 ) {
+        if(messages.size() > 0) {
             sendAndReset();
         }
     }
