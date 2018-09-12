@@ -16,7 +16,7 @@ import javax.annotation.Nonnull;
 
 public class Logzio extends LogstashIndexer<LogzioDao>
 {
-    private Secret key;
+    private Secret token;
     private String host;
 
     @DataBoundConstructor
@@ -27,15 +27,15 @@ public class Logzio extends LogstashIndexer<LogzioDao>
     @DataBoundSetter
     public void setHost(String host){ this.host = host; }
 
-    public String getKey()
+    public String getToken()
     {
-        return Secret.toString(key);
+        return Secret.toString(token);
     }
 
     @DataBoundSetter
-    public void setKey(String key)
+    public void setToken(String token)
     {
-        this.key = Secret.fromString(key);
+        this.token = Secret.fromString(token);
     }
 
 
@@ -49,7 +49,7 @@ public class Logzio extends LogstashIndexer<LogzioDao>
         if (getClass() != obj.getClass())
             return false;
         Logzio other = (Logzio) obj;
-        if (!Secret.toString(key).equals(other.getKey()))
+        if (!Secret.toString(token).equals(other.getToken()))
         {
             return false;
         }
@@ -66,12 +66,12 @@ public class Logzio extends LogstashIndexer<LogzioDao>
         final int prime = 31;
         int result = super.hashCode();
         result = prime * result + ((host == null) ? 0 : host.hashCode());
-        result = prime * result + Secret.toString(key).hashCode();
+        result = prime * result + Secret.toString(token).hashCode();
         return result;
     }
 
     @Override
-    public LogzioDao createIndexerInstance() { return new LogzioDao(host, Secret.toString(key)); }
+    public LogzioDao createIndexerInstance() { return new LogzioDao(host, Secret.toString(token)); }
 
     @Extension
     public static class LogzioDescriptor extends LogstashIndexerDescriptor
@@ -89,7 +89,7 @@ public class Logzio extends LogstashIndexer<LogzioDao>
             return 0;
         }
 
-        public FormValidation doCheckKey(@QueryParameter("value") String value)
+        public FormValidation doCheckToken(@QueryParameter("value") String value)
         {
             if (StringUtils.isBlank(value))
             {
