@@ -18,7 +18,7 @@ public class LogzioHttpsClient{
     private static final int CONNECT_TIMEOUT = 10 * 1000;
     private static final int SOCKET_TIMEOUT = 10 * 1000;
     private final HttpsSyncSender logzioClient;
-    private List<FormattedLogMessage> messages; //Not thread safe
+    private List<FormattedLogMessage> messages;
     private int size;
 
     LogzioHttpsClient(String token, String listener, String type) throws LogzioParameterErrorException {

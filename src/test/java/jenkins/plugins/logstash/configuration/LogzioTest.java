@@ -19,19 +19,19 @@ public class LogzioTest{
     public void setup(){
         indexer = new Logzio();
         indexer.setHost("https://listener.logz.io:8071");
-        indexer.setKey("key");
+        indexer.setToken("token");
 
         indexer2 = new Logzio();
         indexer2.setHost("https://listener.logz.io:8071");
-        indexer2.setKey("key");
+        indexer2.setToken("token");
     }
 
     @Test
     public void sameSettingsAreEqual(){ assertThat(indexer.equals(indexer2), is(true)); }
 
     @Test
-    public void keyChangeIsNotEqual() {
-        indexer.setKey("newPassword");
+    public void tokenChangeIsNotEqual() {
+        indexer.setToken("newPassword");
         assertThat(indexer.equals(indexer2), is(false));
     }
 

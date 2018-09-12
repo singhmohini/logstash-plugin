@@ -13,6 +13,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 
 import javax.annotation.Nonnull;
+import java.util.Objects;
 
 public class Logzio extends LogstashIndexer<LogzioDao>
 {
@@ -40,8 +41,7 @@ public class Logzio extends LogstashIndexer<LogzioDao>
 
 
     @Override
-    public boolean equals(Object obj)
-    {
+    public boolean equals(Object obj) {
         if (obj == null)
             return false;
         if (this == obj)
@@ -49,15 +49,7 @@ public class Logzio extends LogstashIndexer<LogzioDao>
         if (getClass() != obj.getClass())
             return false;
         Logzio other = (Logzio) obj;
-        if (!Secret.toString(token).equals(other.getToken()))
-        {
-            return false;
-        }
-        if (host == null)
-        {
-            return other.host == null;
-        }
-        else return host.equals(other.host);
+        return Secret.toString(token).equals(other.getToken()) && Objects.equals(host, other.host);
     }
 
     @Override
