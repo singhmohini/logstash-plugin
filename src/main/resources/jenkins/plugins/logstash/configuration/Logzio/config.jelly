@@ -3,7 +3,7 @@
       <f:entry title="${%Logz.io Host}" field="host">
         <f:textbox default="https://listener.logz.io:8071"/>
       </f:entry>
-      <f:entry title="${%Logz.io token}" field="token">
+      <f:entry title="${%Logz.io Token}" field="token">
         <f:password/>
       </f:entry>
 </j:jelly>
