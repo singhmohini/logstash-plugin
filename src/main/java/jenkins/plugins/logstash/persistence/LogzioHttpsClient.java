@@ -8,6 +8,7 @@ import io.logz.sender.exceptions.LogzioParameterErrorException;
 import io.logz.sender.exceptions.LogzioServerErrorException;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -32,7 +33,7 @@ public class LogzioHttpsClient{
                 .build();
 
         logzioClient = new HttpsSyncSender(gzipHttpsRequestConfiguration, new Reporter());
-        messages = new ArrayList<>();
+        messages = Collections.synchronizedList(new ArrayList<FormattedLogMessage>());
         size = 0;
     }
 
