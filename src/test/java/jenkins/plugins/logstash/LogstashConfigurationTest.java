@@ -5,9 +5,7 @@ import static org.hamcrest.text.MatchesPattern.matchesPattern;
 import static org.junit.Assert.assertThat;
 
 import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
+import java.net.URL;
 import java.util.Date;
 
 import org.apache.commons.lang.time.FastDateFormat;
@@ -15,12 +13,11 @@ import org.hamcrest.core.IsInstanceOf;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
-import org.xml.sax.SAXException;
 
-import com.gargoylesoftware.htmlunit.ElementNotFoundException;
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 
+import jenkins.plugins.logstash.configuration.ElasticSearch;
 import jenkins.plugins.logstash.configuration.RabbitMq;
 import jenkins.plugins.logstash.persistence.ElasticSearchDao;
 import jenkins.plugins.logstash.persistence.RabbitMqDao;
@@ -94,7 +91,7 @@ public class LogstashConfigurationTest extends LogstashConfigurationTestBase
     LogstashConfiguration configuration = new LogstashConfigurationForTest();
     assertThat(configuration.isMilliSecondTimestamps(),equalTo(true));
     FastDateFormat formatter = configuration.getDateFormatter();
-    assertThat(formatter.format(new Date(118,02,10,22,22)), matchesPattern("2018-03-10T22:22:00.000[+-]\\d{4}"));
+    assertThat(formatter.format(new Date(118,2,10,22,22)), matchesPattern("2018-03-10T22:22:00.000[+-]\\d{4}"));
   }
 
   /**
@@ -107,5 +104,16 @@ public class LogstashConfigurationTest extends LogstashConfigurationTestBase
     HtmlPage p = j.createWebClient().goTo("configure");
     HtmlForm f = p.getFormByName("config");
     j.submit(f);
+  }
+
+  @Test
+  public void programmaticConfigurationChangesActiveIndexer() throws Exception
+  {
+    LogstashConfigurationTestBase.configFile = new File("src/test/resources/rabbitmq.xml");
+    LogstashConfiguration configuration = new LogstashConfigurationForTest();
+    ElasticSearch es = new ElasticSearch();
+    es.setUri(new URL("http://localhost/key"));
+    configuration.setLogstashIndexer(es);
+    assertThat(configuration.getIndexerInstance(), IsInstanceOf.instanceOf(ElasticSearchDao.class));
   }
 }
