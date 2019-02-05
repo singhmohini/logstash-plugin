@@ -57,10 +57,10 @@ import org.jenkinsci.Symbol;
  */
 public class LogstashNotifier extends Notifier implements SimpleBuildStep {
 
-  private static Logger LOGGER = Logger.getLogger(LogstashNotifier.class.getName());
+  private static final Logger LOGGER = Logger.getLogger(LogstashNotifier.class.getName());
 
-  private int maxLines;
-  private boolean failBuild;
+  private final int maxLines;
+  private final boolean failBuild;
 
   @DataBoundConstructor
   public LogstashNotifier(int maxLines, boolean failBuild) {
@@ -121,7 +121,7 @@ public class LogstashNotifier extends Notifier implements SimpleBuildStep {
     return (Descriptor) super.getDescriptor();
   }
 
-  @Extension @Symbol("logstashSend")
+  @Extension
   public static class Descriptor extends BuildStepDescriptor<Publisher> {
 
     @Override
