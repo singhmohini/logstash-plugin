@@ -25,7 +25,9 @@
 package jenkins.plugins.logstash;
 
 import java.io.IOException;
+import java.io.OutputStream;
 
+import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import hudson.Extension;
@@ -35,6 +37,8 @@ import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
 import hudson.tasks.BuildWrapper;
 import hudson.tasks.BuildWrapperDescriptor;
+
+import javax.annotation.CheckForNull;
 
 /**
  *
@@ -47,6 +51,9 @@ import hudson.tasks.BuildWrapperDescriptor;
 @Deprecated
 public class LogstashBuildWrapper extends BuildWrapper
 {
+
+  @CheckForNull
+  private SecureGroovyScript secureGroovyScript;
 
   /**
    * Create a new {@link LogstashBuildWrapper}.
@@ -71,6 +78,16 @@ public class LogstashBuildWrapper extends BuildWrapper
   public DescriptorImpl getDescriptor()
   {
     return (DescriptorImpl)super.getDescriptor();
+  }
+
+  // Method to encapsulate calls for unit-testing
+  LogstashWriter getLogStashWriter(AbstractBuild<?, ?> build, OutputStream errorStream) {
+    LogstashScriptProcessor processor = null;
+    if (secureGroovyScript != null) {
+      processor = new LogstashScriptProcessor(secureGroovyScript, errorStream);
+    }
+
+    return new LogstashWriter(build, errorStream, null, build.getCharset(), processor);
   }
 
   /**
