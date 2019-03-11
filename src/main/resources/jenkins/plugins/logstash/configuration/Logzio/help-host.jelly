@@ -1,3 +1,4 @@
+<?jelly escape-by-default='true'?>
 <div>
   <p>Logz.io listener URL.<br/>
   If you are in the EU region insert https://listener-eu.logz.io:8071. Otherwise, use https://listener.logz.io:8071<br/>
