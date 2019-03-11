@@ -28,9 +28,6 @@ import net.sf.json.JSONObject;
 
 /**
  * Interface describing processors of persisted payload.
- *
- * @author Aleksandar Kostadinov
- * @since 1.4.0
  */
 public interface LogstashPayloadProcessor {
     /**

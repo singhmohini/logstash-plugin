@@ -43,9 +43,6 @@ import java.io.OutputStream;
  * When build is finished, script will receive null as the payload and can
  * return any cached but non-sent data back for persisting.
  * The return value of script is the payload to be persisted unless null.
- *
- * @author Aleksandar Kostadinov
- * @since 1.4.0
  */
 public class LogstashScriptProcessor implements LogstashPayloadProcessor{
   @Nonnull
