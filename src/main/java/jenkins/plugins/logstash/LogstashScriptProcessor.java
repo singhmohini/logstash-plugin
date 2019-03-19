@@ -84,11 +84,6 @@ public class LogstashScriptProcessor implements LogstashPayloadProcessor{
     consoleOut.flush();
   }
 
-  /*
-   * good examples in:
-   *  https://github.com/jenkinsci/envinject-plugin/blob/master/src/main/java/org/jenkinsci/plugins/envinject/service/EnvInjectEnvVars.java
-   *  https://github.com/jenkinsci/groovy-postbuild-plugin/pull/11/files
-   */
   @Override
   public JSONObject process(JSONObject payload) throws Exception {
     binding.setVariable("payload", payload);

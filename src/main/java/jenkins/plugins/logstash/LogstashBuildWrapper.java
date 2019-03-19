@@ -25,9 +25,7 @@
 package jenkins.plugins.logstash;
 
 import java.io.IOException;
-import java.io.OutputStream;
 
-import org.jenkinsci.plugins.scriptsecurity.sandbox.groovy.SecureGroovyScript;
 import org.kohsuke.stapler.DataBoundConstructor;
 
 import hudson.Extension;
@@ -37,8 +35,6 @@ import hudson.model.AbstractProject;
 import hudson.model.BuildListener;
 import hudson.tasks.BuildWrapper;
 import hudson.tasks.BuildWrapperDescriptor;
-
-import javax.annotation.CheckForNull;
 
 /**
  *
@@ -52,73 +48,60 @@ import javax.annotation.CheckForNull;
 public class LogstashBuildWrapper extends BuildWrapper
 {
 
-  @CheckForNull
-  private SecureGroovyScript secureGroovyScript;
-
-  /**
-   * Create a new {@link LogstashBuildWrapper}.
-   */
-  @DataBoundConstructor
-  public LogstashBuildWrapper()
-  {}
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public Environment setUp(AbstractBuild build, Launcher launcher, BuildListener listener)
-      throws IOException, InterruptedException
-  {
-    return new Environment()
-    {
-    };
-  }
-
-  @Override
-  public DescriptorImpl getDescriptor()
-  {
-    return (DescriptorImpl)super.getDescriptor();
-  }
-
-  // Method to encapsulate calls for unit-testing
-  LogstashWriter getLogStashWriter(AbstractBuild<?, ?> build, OutputStream errorStream) {
-    LogstashScriptProcessor processor = null;
-    if (secureGroovyScript != null) {
-      processor = new LogstashScriptProcessor(secureGroovyScript, errorStream);
-    }
-
-    return new LogstashWriter(build, errorStream, null, build.getCharset(), processor);
-  }
-
-  /**
-   * Registers {@link LogstashBuildWrapper} as a {@link BuildWrapper}.
-   */
-  @Extension
-  public static class DescriptorImpl extends BuildWrapperDescriptor
-  {
-
-    public DescriptorImpl()
-    {
-      super(LogstashBuildWrapper.class);
-      load();
-    }
+    /**
+     * Create a new {@link LogstashBuildWrapper}.
+     */
+    @DataBoundConstructor
+    public LogstashBuildWrapper()
+    {}
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public String getDisplayName()
+    public Environment setUp(AbstractBuild build, Launcher launcher, BuildListener listener)
+            throws IOException, InterruptedException
     {
-      return Messages.DisplayName();
+        return new Environment()
+        {
+        };
+    }
+
+    @Override
+    public DescriptorImpl getDescriptor()
+    {
+        return (DescriptorImpl)super.getDescriptor();
     }
 
     /**
-     * {@inheritDoc}
+     * Registers {@link LogstashBuildWrapper} as a {@link BuildWrapper}.
      */
-    @Override
-    public boolean isApplicable(AbstractProject<?, ?> item)
+    @Extension
+    public static class DescriptorImpl extends BuildWrapperDescriptor
     {
-      return false;
+
+        public DescriptorImpl()
+        {
+            super(LogstashBuildWrapper.class);
+            load();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public String getDisplayName()
+        {
+            return Messages.DisplayName();
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public boolean isApplicable(AbstractProject<?, ?> item)
+        {
+            return false;
+        }
     }
-  }
 }
