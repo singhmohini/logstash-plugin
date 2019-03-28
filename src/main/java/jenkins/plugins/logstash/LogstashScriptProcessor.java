@@ -45,31 +45,13 @@ import java.io.OutputStream;
  * The return value of script is the payload to be persisted unless null.
  */
 public class LogstashScriptProcessor implements LogstashPayloadProcessor{
-  @Nonnull
-  private final SecureGroovyScript script;
 
   @Nonnull
   private final OutputStream consoleOut;
 
-  /** Groovy binding for script execution */
-  @Nonnull
-  private final Binding binding;
 
-  /** Classloader for script execution */
-  @Nonnull
-  private final ClassLoader classLoader;
-
-  public LogstashScriptProcessor(SecureGroovyScript script, OutputStream consoleOut) {
-    this.script = script;
+  public LogstashScriptProcessor(OutputStream consoleOut) {
     this.consoleOut = consoleOut;
-
-    // TODO: should we put variables in the binding like manager, job, etc.?
-    binding = new Binding();
-    binding.setVariable("console", new BuildConsoleWrapper());
-
-    // not sure what the diff is compared to getClass().getClassLoader();
-    final Jenkins jenkins = Jenkins.getInstance();
-    classLoader = jenkins.getPluginManager().uberClassLoader;
   }
 
   /**
@@ -85,25 +67,9 @@ public class LogstashScriptProcessor implements LogstashPayloadProcessor{
   }
 
   @Override
-  public JSONObject process(JSONObject payload) throws Exception {
-    binding.setVariable("payload", payload);
-    script.evaluate(classLoader, binding);
-    return (JSONObject) binding.getVariable("payload");
-  }
-
-  @Override
   public JSONObject finish() throws Exception {
     buildLogPrintln("Tearing down Script Log Processor..");
-    return process(null);
+    return null;
   }
 
-  /**
-   * Helper to allow access from sandboxed script to output messages to console.
-   */
-  private class BuildConsoleWrapper {
-    @Whitelisted
-    public void println(Object o) throws IOException {
-      buildLogPrintln(o);
-    }
-  }
 }

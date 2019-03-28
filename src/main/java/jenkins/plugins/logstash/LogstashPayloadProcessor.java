@@ -30,13 +30,6 @@ import net.sf.json.JSONObject;
  * Interface describing processors of persisted payload.
  */
 public interface LogstashPayloadProcessor {
-    /**
-     * Modifies a JSON payload compatible with the Logstash schema.
-     *
-     * @param payload the JSON payload that has been constructed so far.
-     * @return The formatted JSON object, can be null to ignore this payload.
-     */
-    JSONObject process(JSONObject payload) throws Exception;
 
     /**
      * Finalizes any operations, for example returns cashed lines at end of build.
