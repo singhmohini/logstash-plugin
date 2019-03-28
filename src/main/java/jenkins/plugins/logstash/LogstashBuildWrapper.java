@@ -60,7 +60,7 @@ public class LogstashBuildWrapper extends BuildWrapper
    */
   @Override
   public Environment setUp(AbstractBuild build, Launcher launcher, BuildListener listener)
-          throws IOException, InterruptedException
+      throws IOException, InterruptedException
   {
     return new Environment()
     {
