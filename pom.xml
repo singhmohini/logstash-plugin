@@ -54,7 +54,7 @@
   </distributionManagement>
 
   <properties>
-    <revision>2.4.0</revision>
+    <revision>2.3.1</revision>
     <changelist>-SNAPSHOT</changelist>
     <skipIntegrationTests>true</skipIntegrationTests>
     <java.level>8</java.level>
